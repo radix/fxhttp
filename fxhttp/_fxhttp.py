@@ -23,10 +23,15 @@ class Request(object):
     Attribute('status_code'),
     Attribute('reason'),
     Attribute('headers'),
-    Attribute('url'),
+    Attribute('request'),
     ])
 class Response(object):
     pass
+
+
+# FIXME:  Headers behave differntly on treq/requests
+# - single vs list
+# - case insentivity?
 
 
 def sync_dispatch(intent, box):
@@ -41,21 +46,21 @@ def sync_dispatch(intent, box):
         data=intent.data,
         headers=intent.headers,
     )
-    box.success(Response(
+    box.succeed(Response(
         content=response.content,
         status_code=response.status_code,
         reason=response.reason,
         headers=response.headers,
-        url=response.url,
         request=intent))
 
 
-def async_dispatch(intent, box):
+def async_dispatch(reactor, intent, box):
     if not isinstance(intent, Request):
         raise NoEffectHandlerError(intent)
 
     from treq import request
     d = request(
+        reactor=reactor,
         method=intent.method,
         url=intent.url,
         params=intent.params,
@@ -64,12 +69,11 @@ def async_dispatch(intent, box):
     )
 
     def got_response(response):
-        box.success(Response(
+        box.succeed(Response(
             content=response.content,
-            status_code=response.status_code,
-            reason=response.reason,
-            headers=response.headers,
-            url=response.url,
+            status_code=response.code,
+            reason=response.phrase,
+            headers=dict(response.headers.getAllRawHeaders()),
             request=intent))
     d.addCallback(got_response)
 
@@ -88,7 +92,7 @@ class canned_dispatch(object):
 
         request, response = self._expected.pop(0)
         if intent == response:
-            box.success(response)
+            box.succeed(response)
         else:
             try:
                 raise AssertionError("Unexecpected request.")
