@@ -26,7 +26,12 @@ setup(
         'fxhttp',
     ],
     include_package_data=True,
-    install_requires=[],
+    install_requires=[
+        'treq',
+        'requests',
+        'effect',
+        'characteristic',
+    ],
     license="BSD",
     zip_safe=False,
     keywords='fxhttp',
