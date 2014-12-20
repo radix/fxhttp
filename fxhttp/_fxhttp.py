@@ -91,10 +91,10 @@ class canned_dispatch(object):
             raise NoEffectHandlerError(intent)
 
         request, response = self._expected.pop(0)
-        if intent == response:
+        if intent == request:
             box.succeed(response)
         else:
             try:
                 raise AssertionError("Unexecpected request.")
-            except:
+            except BaseException:
                 box.fail(sys.exc_info())
