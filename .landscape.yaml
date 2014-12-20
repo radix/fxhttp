@@ -1,0 +1,3 @@
+ignore-paths:
+- versioneer.py
+- fxhttp/_version.py
