@@ -8,16 +8,14 @@ del get_versions
 from ._fxhttp import (
     Request,
     Response,
-    sync_dispatch,
-    async_dispatch,
-    canned_dispatch
+    sync_preform_request,
+    async_preform_request,
 )
 
 __all__ = [
     'Request',
     'Response',
-    'sync_dispatch',
-    'async_dispatch',
-    'canned_dispatch',
+    'sync_preform_request',
+    'async_preform_request',
     '__version__',
 ]

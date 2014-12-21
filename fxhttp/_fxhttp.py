@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
-
-import sys
+# -*- test-case-name: fxhttp.tests -*-
 
 from characteristic import attributes, Attribute
 
-from effect import NoEffectHandlerError
+from effect import sync_performer
+from effect.twisted import deferred_performer
 
 
 @attributes([
@@ -34,10 +33,8 @@ class Response(object):
 # - case insentivity?
 
 
-def sync_dispatch(intent, box):
-    if not isinstance(intent, Request):
-        raise NoEffectHandlerError(intent)
-
+@sync_performer
+def sync_preform_request(dispatcher, intent):
     from requests import request
     response = request(
         method=intent.method,
@@ -46,19 +43,18 @@ def sync_dispatch(intent, box):
         data=intent.data,
         headers=intent.headers,
     )
-    box.succeed(Response(
+    return Response(
         content=response.content,
         status_code=response.status_code,
         reason=response.reason,
         headers=response.headers,
-        request=intent))
+        request=intent)
 
 
-def async_dispatch(reactor, intent, box):
-    if not isinstance(intent, Request):
-        raise NoEffectHandlerError(intent)
-
+@deferred_performer
+def async_preform_request(dispatcher, intent):
     from treq import request
+    from twisted.internet import reactor
     d = request(
         reactor=reactor,
         method=intent.method,
@@ -69,32 +65,11 @@ def async_dispatch(reactor, intent, box):
     )
 
     def got_response(response):
-        box.succeed(Response(
+        return Response(
             content=response.content,
             status_code=response.code,
             reason=response.phrase,
             headers=dict(response.headers.getAllRawHeaders()),
-            request=intent))
+            request=intent)
     d.addCallback(got_response)
-
-
-class canned_dispatch(object):
-
-    def __init__(self):
-        self._expected = []
-
-    def add_response(self, request, response):
-        self._expected.append((request, response))
-
-    def __call__(self, intent, box):
-        if not isinstance(intent, Request):
-            raise NoEffectHandlerError(intent)
-
-        request, response = self._expected.pop(0)
-        if intent == request:
-            box.succeed(response)
-        else:
-            try:
-                raise AssertionError("Unexecpected request.")
-            except BaseException:
-                box.fail(sys.exc_info())
+    return d
