@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 
 """
-test_fxhttp
-----------------------------------
-
-Tests for `fxhttp` module.
 """
 
 import unittest
